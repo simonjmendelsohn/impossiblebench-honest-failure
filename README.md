@@ -12,7 +12,7 @@ This repo contains:
 - a defect manifest with a script that reproduces every control-split defect;
 - our labels, results and curated transcripts.
 
-A write-up is in preparation; this README will link to it.
+The data issues, the exit scoring and the `find_code` bug are reported upstream as [safety-research/impossiblebench#5](https://github.com/safety-research/impossiblebench/issues/5). A write-up is in preparation; this README will link to it.
 
 ## Main findings (October 2026 models)
 
