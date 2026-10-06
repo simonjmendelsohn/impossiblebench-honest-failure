@@ -1,0 +1,12 @@
+{
+  "no-web": {
+    "PreToolUse": [
+      {
+        "matcher": "search_web|read_url_content|open_browser_url|read_browser_page|list_browser_pages|execute_browser_javascript|click_browser_pixel|capture_browser_.*|browser_.*",
+        "hooks": [
+          {"command": "echo '{\"decision\": \"deny\", \"reason\": \"Web and browser tools are disabled in this environment.\"}'"}
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "gcp": {
+    "project": "YOUR_GCP_PROJECT",
+    "location": "global"
+  },
+  "trustedWorkspaces": [
+    "~/ib-runs"
+  ]
+}

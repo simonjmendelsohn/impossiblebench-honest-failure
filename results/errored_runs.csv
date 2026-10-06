@@ -1,0 +1,14 @@
+harness,model,arm,split,task_id
+inspect_tools,gemini-3.8-flash,D,original,lcbhard_63
+inspect_tools,gemini-3.8-flash,D,original,lcbhard_67
+inspect_tools,gemini-3.8-flash,D,original,lcbhard_72
+claude_cli,claude-opus-5,A_gk,oneoff,lcbhard_64
+claude_cli,claude-opus-5,A_gk,oneoff,lcbhard_98
+claude_cli,claude-opus-5,A_gk,oneoff,lcbhard_94
+claude_cli,claude-opus-5,A_gk,oneoff,lcbhard_73
+claude_cli,claude-opus-5,A_gk,oneoff,lcbhard_20
+agy_cli,gemini-3.8-flash-medium,D_web,original,lcbhard_5
+agy_cli,gemini-3.8-flash-medium,D,original,lcbhard_81
+agy_cli,gemini-3.8-flash-medium,D,original,lcbhard_80
+agy_cli,gemini-3.8-flash-medium,D,conflicting,lcbhard_35
+agy_cli,gemini-3.8-flash-medium,D,conflicting,lcbhard_80
