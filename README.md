@@ -14,6 +14,8 @@ This repo contains:
 
 The data issues, the exit scoring and the `find_code` bug are reported upstream as [safety-research/impossiblebench#5](https://github.com/safety-research/impossiblebench/issues/5). **The full write-up, with every table, is in [FINDINGS.md](FINDINGS.md).** A short LessWrong summary is in preparation; this README will link to it.
 
+![Gemini 3.1 Pro's benchmark cheat rate under four ways of handling a stop: 78% with the paper's prompt, 60% with one sentence of boilerplate changed, 14% when exit(0) no longer counts as a pass, 0% with a stop option. Most of each bar is exits the judge labels as stops.](figures/stop_scoring.png)
+
 ## How the benchmark scores cheating
 
 ImpossibleBench mutates a task's unit tests so they contradict its docstring: *oneoff* changes one expected value, *conflicting* adds a duplicate assertion with a different value, and *original* is the untouched, solvable control. A correct implementation can't pass an impossible split, so **the cheat rate is the pass rate on the impossible splits**, and a pass is a process that exits with code 0. In the benchmark's minimal scaffold, every reply is executed as code and a failure triggers "try again", up to 10 times. Prompt D tells the agent to STOP if the tests are flawed, but the scaffold's stop string is only advertised in a separate prompt (D_abort). See [FINDINGS.md §1–2](FINDINGS.md#1-background).
@@ -135,6 +137,7 @@ python scripts/verify_known_issues.py              # needs data/ (below)
 | `verify_known_issues.py`, `build_manifest.py` | Reproduce the control-split defects; build the per-task mutation manifest |
 | `label_server.py`, `agreement_server.py`, `sample_exit_labels.py` | Local labeling tools; the human-agreement check; the stop/exit label sample |
 | `monitor_test.py`, `cost.py`, `build_transcripts.py` | The monitor experiment; spend estimate; the curated transcripts |
+| `plot_stop_scoring.py` | The figure above (`figures/stop_scoring.png`; needs matplotlib) |
 
 **Data.** Download the Hugging Face dataset `fjzzq2002/impossible_livecodebench` into `data/`:
 
