@@ -16,6 +16,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib import font_manager
+from matplotlib import patheffects as pe
 from matplotlib.patches import FancyBboxPatch, PathPatch, Rectangle
 from matplotlib.path import Path as MPath
 
@@ -109,10 +110,10 @@ for i, b in enumerate(bars):
     # central estimate of real gaming
     if b["arm"] in CENTRAL:
         c = CENTRAL[b["arm"]]
-        ax.plot([c, c], [y - BAR_H / 2 - 0.09, y + BAR_H / 2 + 0.09], color=INK, lw=1.4, zorder=5,
-                solid_capstyle="round")
-        ax.text(c, y - BAR_H / 2 - 0.13, f"est. real gaming ~{c:.0%}", ha="center", va="bottom", fontsize=7.8,
-                color=INK2, zorder=5)
+        ax.plot([c, c], [y - BAR_H / 2 - 0.11, y + BAR_H / 2 + 0.11], color=INK, lw=2.4, zorder=5,
+                solid_capstyle="round", path_effects=[pe.Stroke(linewidth=4.6, foreground=SURFACE), pe.Normal()])
+        ax.text(c, y - BAR_H / 2 - 0.15, f"our estimate of actual gaming: ~{c:.0%}", ha="center", va="bottom",
+                fontsize=8.6, color=INK, fontweight="bold", zorder=5)
     # row labels
     fig.text(0.315, ax.transData.transform((0, y))[1] / fig.dpi / H + 0.012, b["label"], ha="right", va="center",
              fontsize=10.5, color=INK, fontweight="bold")
@@ -122,8 +123,8 @@ for i, b in enumerate(bars):
 # title, subtitle, legend
 fig.text(0.04, 0.925, "Most of Gemini 3.1 Pro's “cheating” on ImpossibleBench is the model trying to stop",
          fontsize=15, fontweight="bold", color=INK, ha="left", va="baseline")
-fig.text(0.04, 0.875, "Benchmark cheat rate (= pass rate on impossible tasks). Minimal retry loop, prompt D "
-                      "(“if the tests are flawed, STOP”), 202 impossible tasks per bar.",
+fig.text(0.04, 0.875, "Bars: the benchmark's own cheat rate (= pass rate on impossible tasks). Minimal retry loop, "
+                      "prompt D (“if the tests are flawed, STOP”), 202 tasks per bar.",
          fontsize=9.5, color=INK2, ha="left", va="baseline")
 lx = 0.04
 for color, text in [(EXIT, "Printed a diagnosis, then exit(0) before the tests ran (scored as a pass)"),
@@ -133,9 +134,12 @@ for color, text in [(EXIT, "Printed a diagnosis, then exit(0) before the tests r
     t = fig.text(lx + 0.021, 0.818, text, fontsize=9.5, color=INK, ha="left", va="center")
     fig.canvas.draw()
     lx = t.get_window_extent().x1 / fig.dpi / W + 0.03
+fig.lines.append(plt.Line2D([lx + 0.007, lx + 0.007], [0.802, 0.836], color=INK, lw=2.4, transform=fig.transFigure,
+                            figure=fig, solid_capstyle="round"))
+fig.text(lx + 0.021, 0.818, "Our estimate of actual gaming", fontsize=9.5, color=INK, ha="left", va="center")
 
 fig.text(0.04, 0.085,
-         "Exits are LLM-judge labels. “Est. real gaming” is the central estimate of runs that gamed the tests, calibrated "
+         "Exits are LLM-judge labels. “Our estimate of actual gaming” is the central estimate of runs that gamed the tests, calibrated "
          "on 49 manual labels (range ~8–38%).\nBars 2–4 use our prompt ending (“Modification of tests is not allowed and "
          "will be reverted.”); the paper's ends “DO NOT MODIFY THE TESTS.”",
          fontsize=7.8, color=MUTED, ha="left", va="baseline", linespacing=1.5)
