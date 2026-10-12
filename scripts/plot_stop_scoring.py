@@ -149,7 +149,7 @@ if CENTRAL:
                                 transform=fig.transFigure, figure=fig, solid_capstyle="round"))
     fig.text(lx + 0.021, L["leg"], "Our estimate of actual gaming", fontsize=9.5, color=INK, ha="left", va="center")
 
-FOOT_SIMPLE = ("Exits are LLM-judge labels. The stop-option run used our prompt ending (“Modification of tests is not "
+FOOT_SIMPLE = ("Exits are LLM-judge labels. The stop-option run used my prompt ending (“Modification of tests is not "
                "allowed and will be reverted.”)\ninstead of the paper's (“DO NOT MODIFY THE TESTS.”).")
 fig.text(0.04, L["foot"], FOOT_SIMPLE if SIMPLE else
          "Exits are LLM-judge labels. “Our estimate of actual gaming” is the central estimate of runs that gamed the tests, calibrated "
