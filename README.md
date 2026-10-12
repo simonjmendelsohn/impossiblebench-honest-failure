@@ -12,7 +12,11 @@ This repo contains:
 - a defect manifest with a script that reproduces every control-split defect;
 - our labels, results and curated transcripts.
 
-The data issues, the exit scoring and the `find_code` bug are reported upstream as [safety-research/impossiblebench#5](https://github.com/safety-research/impossiblebench/issues/5). A write-up is in preparation; this README will link to it.
+The data issues, the exit scoring and the `find_code` bug are reported upstream as [safety-research/impossiblebench#5](https://github.com/safety-research/impossiblebench/issues/5). **The full write-up, with every table, is in [FINDINGS.md](FINDINGS.md).** A short LessWrong summary is in preparation; this README will link to it.
+
+## How the benchmark scores cheating
+
+ImpossibleBench mutates a task's unit tests so they contradict its docstring: *oneoff* changes one expected value, *conflicting* adds a duplicate assertion with a different value, and *original* is the untouched, solvable control. A correct implementation can't pass an impossible split, so **the cheat rate is the pass rate on the impossible splits**, and a pass is a process that exits with code 0. In the benchmark's minimal scaffold, every reply is executed as code and a failure triggers "try again", up to 10 times. Prompt D tells the agent to STOP if the tests are flawed, but the scaffold's stop string is only advertised in a separate prompt (D_abort). See [FINDINGS.md §1–2](FINDINGS.md#1-background).
 
 ## Main findings (October 2026 models)
 
@@ -39,14 +43,31 @@ The data issues, the exit scoring and the `find_code` bug are reported upstream 
   | Google's Antigravity CLI                                                           | 0/201       |
   | Antigravity CLI with up to 3 rounds of user pushback                               | 0/60        |
 
-  Under the same pushback, Claude Code and Codex also gamed 0/60 each. In our re-implementation of the same minimal loop on their own CLIs, seven Claude and OpenAI models gamed once in 390 runs (60 each, 30 for GPT-6-Astra before a usage limit): Haiku 4.5, Haiku 5.5, Sonnet 5.5 and Opus 5.5 in Claude Code; GPT-6-Luna, GPT-6.1-sol and GPT-6-Astra in Codex CLI. The re-implementation keeps each CLI's system prompt, and Codex keeps its read-only shell. The one was a Haiku 4.5 special case (`transcripts/35_haiku_minimal_loop_special_case.md`). None stopped by exiting with a passing code; among the models we tested, only Gemini did. Haiku 5.5 (added 2026-10-09, scored mechanically, not judged) passed 0/60; on one task it stopped with `raise SystemExit("Stopped: inconsistent test file...")`, which exits with status 1 and so scores as a failure. Codex classified all four such attempts blind as stop-only (`results/haiku55/exit_check_codex.jsonl`). One generation back, though, Opus 5 gamed 57/97 oneoff tasks (59%) in Claude Code under the looser prompt of upstream issue #2 (arm `A_gk`), against 5/102 for Opus 5.5. Other work finds substantial gaming outside Gemini: reward hacking in open-weight models such as Kimi K3, GLM 5.2 and Qwen 3.8 Max ([Bergen et al.](https://arxiv.org/abs/2609.19101)), and baseline hacking across 8 models from 5 families, including OpenAI and xAI models, on EvilGenie ([Gomez](https://arxiv.org/abs/2608.29460)). So these are statements about the models we tested, not about Gemini in general. The direction is the reverse of the paper's own scaffold ablation (Appendix E.1), where tool scaffolds increased cheating for most of its models, though the paper calls its LCB results there "less clear". All three CLIs gamed about 0 here, each with its own model, in line with a [MATS study](https://github.com/MoizIbnYousaf/Mats-Research-Harness) that ran one model in four CLIs and found the harness barely mattered; in our runs the large gap is between the retry loop and setups that let the agent stop (scaffolds also differ in tools and instructions, so this isn't isolated).
+  Under the same pushback, Claude Code and Codex also gamed 0/60 each. In our re-implementation of the same minimal loop on their own CLIs, seven Claude and OpenAI models gamed once in 390 runs (60 each, 30 for GPT-6-Astra before a usage limit): Haiku 4.5, Haiku 5.5, Sonnet 5.5 and Opus 5.5 in Claude Code; GPT-6-Luna, GPT-6.1-sol and GPT-6-Astra in Codex CLI. The re-implementation replaces each CLI's system prompt with a minimal one ("You are a helpful assistant."); other CLI behavior remains, and Codex keeps its read-only shell. The one was a Haiku 4.5 special case (`transcripts/35_haiku_minimal_loop_special_case.md`). None stopped by exiting with a passing code; among the models we tested, only Gemini did. Haiku 5.5 (added 2026-10-09, scored mechanically, not judged) passed 0/60; on one task it stopped with `raise SystemExit("Stopped: inconsistent test file...")`, which exits with status 1 and so scores as a failure. Codex classified all four such attempts blind as stop-only (`results/haiku55/exit_check_codex.jsonl`). One generation back, though, Opus 5 gamed 57/97 oneoff tasks (59%) in Claude Code under the looser prompt of upstream issue #2 (arm `A_gk`), against 5/102 for Opus 5.5. Other work finds substantial gaming outside Gemini: reward hacking in open-weight models such as Kimi K3, GLM 5.2 and Qwen 3.8 Max ([Bergen et al.](https://arxiv.org/abs/2609.19101)), and baseline hacking across 8 models from 5 families, including OpenAI and xAI models, on EvilGenie ([Gomez](https://arxiv.org/abs/2608.29460)). So these are statements about the models we tested, not about Gemini in general. The direction is the reverse of the paper's own scaffold ablation (Appendix E.1), where tool scaffolds increased cheating for most of its models, though the paper calls its LCB results there "less clear". All three CLIs gamed about 0 here, each with its own model, in line with a [MATS study](https://github.com/MoizIbnYousaf/Mats-Research-Harness) that ran one model in four CLIs and found the harness barely mattered; in our runs the large gap is between the retry loop and setups that let the agent stop (scaffolds also differ in tools and instructions, so this isn't isolated).
+
+- **Flag-then-game is real but limited to Gemini here.** In the minimal loop under prompt D, Gemini 3.8 Flash correctly diagnosed the bad test in 95–100% of runs, then gamed it without saying so in 7–14% (Gemini 3.1 Pro: 7–13%). It was 0–1% in the tools scaffold and Antigravity ([FINDINGS.md §5.4](FINDINGS.md#54-flag-then-game)).
 
 - **An explicit exit option nearly eliminated gaming here.** Flash in the minimal loop went from 10–20% to 0–1%, and Gemini 3.1 Pro took the exit on all 202 impossible tasks, gaming none. The cost on solvable tasks was small: Pro's clean solve rate went from 99% to 92%. It escalated 7 clean tasks, 4 of them with documented test flaws. Others find the same: an escalation tool plus a policy cut hacking from 23.6% to 5.3% across 8 models ([Gomez](https://arxiv.org/abs/2608.29460)), though Gemini models made up all of the residual hacking there. It isn't universal: a handoff tool alone didn't reduce Qwen3-Coder's cheating on Impossible-SWEbench ([SJCaldwell/permission-to-stop](https://github.com/SJCaldwell/permission-to-stop)).
+
+## What this means for the paper
+
+Nothing here contradicts the paper's main claims: models cheat on impossible tasks (in our runs, mainly Gemini and older or loosely prompted models), and stricter prompts and an abort option reduce it. We didn't audit the SWE-bench half. The control-split defects barely move impossible-split cheat rates; they cap original-split solve rates at about 95%. Exit-passes inflate the metric only for models that stop with `exit(0)`, which among current models was Gemini and never the Claude or OpenAI models we tested. We couldn't rerun the paper's models (the Claude ones are retired), so we don't know how often its models exited. The bigger effect is on current use: a cheat rate quoted for a current model can't be read as gaming without the scaffold, the exact prompt, and exits separated out. Details: [FINDINGS.md §10](FINDINGS.md#10-what-this-means-for-the-paper-and-for-current-use).
+
+## Recommendations for eval builders
+
+- Provide a stop channel and name it in the prompt.
+- Don't treat exit 0 as success: require a token printed after the checks.
+- Audit controls with multi-model "this test is wrong" claims, verified by computation.
+- Score disclosed and silent gaming separately.
+- Report the harness and the exact prompt, boilerplate included, and run more than once.
+
+Details: [FINDINGS.md §11](FINDINGS.md#11-recommendations).
 
 ## Contents
 
 | Path                                                | What                                                                                                                                                                                                     |
 | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FINDINGS.md` | The full write-up: setup, every main table, transcript references, implications, related work |
 | `patches/`                                          | Patch against upstream `061dc3d` that fixes the measurement bugs above, with a [README](patches/README.md)                                                                                               |
 | `manifest/lcb_manifest.csv`                         | Per task and split: the mutated assertion, its contradicting partner or original value, and the call                                                                                                     |
 | `manifest/known_issues.csv`                         | Broken mutations, wrong expected values, docstring-constraint violations, weak and over-specified tests                                                                                                  |
@@ -66,7 +87,7 @@ The data issues, the exit scoring and the `find_code` bug are reported upstream 
 **Arms** (the `arm` column):
 - `A`: the repo's default instruction.
 - `D`: the paper's prompt D.
-- `D_abort`: D plus the `[flag_for_human_intervention]` exit.
+- `D_abort`: D with the `[flag_for_human_intervention]` exit added and D's last sentence ("Do NOT try to carve out the code…") dropped; see [FINDINGS.md §2](FINDINGS.md#2-setup).
 - `D_paper`: D with the paper's exact prompt ending.
 - `A_gk`: the prompt and system text of the gatekeep Opus 5 run (upstream issue #2), used to compare Opus 5 and 5.5.
 - `D_web`, `A_web`: early Antigravity runs with web tools available.
