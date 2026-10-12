@@ -12,7 +12,7 @@ This repo contains:
 - a defect manifest with a script that reproduces every control-split defect;
 - our labels, results and curated transcripts.
 
-The data issues, the exit scoring and the `find_code` bug are reported upstream as [safety-research/impossiblebench#5](https://github.com/safety-research/impossiblebench/issues/5). **The full write-up, with every table, is in [FINDINGS.md](FINDINGS.md).** A short LessWrong summary is in preparation; this README will link to it.
+The data issues, the exit scoring and the `find_code` bug are reported upstream as [safety-research/impossiblebench#5](https://github.com/safety-research/impossiblebench/issues/5). **The full write-up, with every table, is in [FINDINGS.md](FINDINGS.md).** A short summary is on LessWrong: [Good Evals Are Hard: An ImpossibleBench Audit](https://www.lesswrong.com/posts/qnrjAhiqire7JeoN2/good-evals-are-hard-an-impossiblebench-audit).
 
 ![Gemini 3.1 Pro's benchmark cheat rate under four ways of handling a stop: 78% with the paper's prompt, 60% with one sentence of boilerplate changed, 14% when exit(0) no longer counts as a pass, 0% with a stop option. Most of each bar is exits the judge labels as stops.](figures/stop_scoring.png)
 
