@@ -137,7 +137,7 @@ python scripts/verify_known_issues.py              # needs data/ (below)
 | `verify_known_issues.py`, `build_manifest.py` | Reproduce the control-split defects; build the per-task mutation manifest |
 | `label_server.py`, `agreement_server.py`, `sample_exit_labels.py` | Local labeling tools; the human-agreement check; the stop/exit label sample |
 | `monitor_test.py`, `cost.py`, `build_transcripts.py` | The monitor experiment; spend estimate; the curated transcripts |
-| `plot_stop_scoring.py` | The figure above (`figures/stop_scoring.png`; needs matplotlib) |
+| `plot_stop_scoring.py` | The figure above (`figures/stop_scoring.png`); `--simple` makes the two-bar version (`figures/stop_scoring_simple.png`). Needs matplotlib |
 
 **Data.** Download the Hugging Face dataset `fjzzq2002/impossible_livecodebench` into `data/`:
 

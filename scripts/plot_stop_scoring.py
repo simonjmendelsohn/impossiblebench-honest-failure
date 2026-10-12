@@ -8,7 +8,9 @@ Gemini 3.1 Pro preview, ImpossibleBench's minimal retry loop, prompt D, both imp
 Each bar splits the benchmark's cheat rate (= pass rate) into passes the judge labels `stop_via_exit` and other passes.
 The tick marks the central estimate of runs that actually gamed the tests (scripts/pro_range.py).
 
-  python scripts/plot_stop_scoring.py [results]     -> figures/stop_scoring.png
+With --simple, only bars 1 and 4 and no estimate tick (the version used in the write-up's summary post).
+
+  python scripts/plot_stop_scoring.py [results] [--simple]   -> figures/stop_scoring.png / stop_scoring_simple.png
 """
 import sys
 from pathlib import Path
@@ -21,15 +23,20 @@ from matplotlib.patches import FancyBboxPatch, PathPatch, Rectangle
 from matplotlib.path import Path as MPath
 
 ROOT = Path(__file__).resolve().parent.parent
-src = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "results"
-out = ROOT / "figures" / "stop_scoring.png"
+SIMPLE = "--simple" in sys.argv
+args = [a for a in sys.argv[1:] if not a.startswith("--")]
+src = Path(args[0]) if args else ROOT / "results"
+out = ROOT / "figures" / ("stop_scoring_simple.png" if SIMPLE else "stop_scoring.png")
 
 # Central estimates of gaming from scripts/pro_range.py (per split, summed over both splits, out of 202)
-CENTRAL = {"D_paper": (26.6 + 21.9) / 202, "D": (19.6 + 20.4) / 202}
+CENTRAL = {} if SIMPLE else {"D_paper": (26.6 + 21.9) / 202, "D": (19.6 + 20.4) / 202}
 
 r = pd.read_csv(src / "runs_labeled.csv")
 r = r[(r.model == "gemini-3.1-pro-preview") & (r.harness == "inspect_minimal") & r.split.isin(["oneoff", "conflicting"])]
 ROWS = [
+    ("D_paper", "No stop option offered", "the paper's exact prompt"),
+    ("D_abort", "A stop option named in the prompt", "“submit [flag_for_human_intervention]”"),
+] if SIMPLE else [
     ("D_paper", "The paper's exact prompt", "normal scorer"),
     ("D", "One sentence of boilerplate changed", "normal scorer"),
     ("D_patched", "exit(0) no longer counts as a pass", "patched scorer"),
@@ -54,11 +61,14 @@ for f in ["Helvetica Neue", "Helvetica", "Arial"]:
         plt.rcParams["font.family"] = f
         break
 
-W, H = 10.0, 5.6
+W, H = (10.0, 3.9) if SIMPLE else (10.0, 5.6)
+# layout in figure fractions: axes rect, title/subtitle/legend baselines, footnote baselines
+L = (dict(ax=(0.335, 0.285, 0.60, 0.36), title=0.895, sub=0.825, leg=0.735, foot=0.12, src=0.05, top=-0.5) if SIMPLE else
+     dict(ax=(0.335, 0.215, 0.60, 0.54), title=0.925, sub=0.875, leg=0.818, foot=0.085, src=0.035, top=-0.62))
 fig = plt.figure(figsize=(W, H), dpi=220, facecolor=SURFACE)
-ax = fig.add_axes((0.335, 0.215, 0.60, 0.54), facecolor=SURFACE)
+ax = fig.add_axes(L["ax"], facecolor=SURFACE)
 ax.set_xlim(0, 1)
-ax.set_ylim(len(bars) - 0.5, -0.62)
+ax.set_ylim(len(bars) - 0.5, L["top"])
 for s in ax.spines.values():
     s.set_visible(False)
 ax.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False)
@@ -70,7 +80,7 @@ BAR_H = 0.46
 GAP = 0.0035                       # surface gap between segments, in axis units
 px = 1 / (0.60 * W * 220)          # one pixel in axis-x units, for the rounded data end
 RAD = 9 * px
-RAD_Y = 9 * (len(bars) + 0.12) / (0.54 * H * 220)  # same 9 px in y data units
+RAD_Y = 9 * (len(bars) - 0.5 - L["top"]) / (L["ax"][3] * H * 220)  # same 9 px in y data units
 
 
 def segment(y, x0, w, color, rounded_end):
@@ -121,29 +131,32 @@ for i, b in enumerate(bars):
              fontsize=9, color=MUTED)
 
 # title, subtitle, legend
-fig.text(0.04, 0.925, "Most of Gemini 3.1 Pro's “cheating” on ImpossibleBench is the model trying to stop",
+fig.text(0.04, L["title"], "Most of Gemini 3.1 Pro's “cheating” on ImpossibleBench is the model trying to stop",
          fontsize=15, fontweight="bold", color=INK, ha="left", va="baseline")
-fig.text(0.04, 0.875, "Bars: the benchmark's own cheat rate (= pass rate on impossible tasks). Minimal retry loop, "
+fig.text(0.04, L["sub"], ("The" if SIMPLE else "Bars: the") + " benchmark's own cheat rate (= pass rate on impossible tasks). Minimal retry loop, "
                       "prompt D (“if the tests are flawed, STOP”), 202 tasks per bar.",
          fontsize=9.5, color=INK2, ha="left", va="baseline")
 lx = 0.04
 for color, text in [(EXIT, "Printed a diagnosis, then exit(0) before the tests ran (scored as a pass)"),
                     (OTHER, "Other passes")]:
-    fig.patches.append(FancyBboxPatch((lx, 0.806), 0.014, 0.026, boxstyle="round,pad=0,rounding_size=0.003",
+    fig.patches.append(FancyBboxPatch((lx, L["leg"] - 0.012 * 5.6 / H), 0.014, 0.026 * 5.6 / H, boxstyle="round,pad=0,rounding_size=0.003",
                                       fc=color, ec="none", transform=fig.transFigure, figure=fig))
-    t = fig.text(lx + 0.021, 0.818, text, fontsize=9.5, color=INK, ha="left", va="center")
+    t = fig.text(lx + 0.021, L["leg"], text, fontsize=9.5, color=INK, ha="left", va="center")
     fig.canvas.draw()
     lx = t.get_window_extent().x1 / fig.dpi / W + 0.03
-fig.lines.append(plt.Line2D([lx + 0.007, lx + 0.007], [0.802, 0.836], color=INK, lw=2.4, transform=fig.transFigure,
-                            figure=fig, solid_capstyle="round"))
-fig.text(lx + 0.021, 0.818, "Our estimate of actual gaming", fontsize=9.5, color=INK, ha="left", va="center")
+if CENTRAL:
+    fig.lines.append(plt.Line2D([lx + 0.007, lx + 0.007], [L["leg"] - 0.016, L["leg"] + 0.018], color=INK, lw=2.4,
+                                transform=fig.transFigure, figure=fig, solid_capstyle="round"))
+    fig.text(lx + 0.021, L["leg"], "Our estimate of actual gaming", fontsize=9.5, color=INK, ha="left", va="center")
 
-fig.text(0.04, 0.085,
+FOOT_SIMPLE = ("Exits are LLM-judge labels. The stop-option run used our prompt ending (“Modification of tests is not "
+               "allowed and will be reverted.”)\ninstead of the paper's (“DO NOT MODIFY THE TESTS.”).")
+fig.text(0.04, L["foot"], FOOT_SIMPLE if SIMPLE else
          "Exits are LLM-judge labels. “Our estimate of actual gaming” is the central estimate of runs that gamed the tests, calibrated "
          "on 49 manual labels (range ~8–38%).\nBars 2–4 use our prompt ending (“Modification of tests is not allowed and "
          "will be reverted.”); the paper's ends “DO NOT MODIFY THE TESTS.”",
          fontsize=7.8, color=MUTED, ha="left", va="baseline", linespacing=1.5)
-fig.text(0.04, 0.035, "Data and code: github.com/simonjmendelsohn/impossiblebench-honest-failure",
+fig.text(0.04, L["src"], "Data and code: github.com/simonjmendelsohn/impossiblebench-honest-failure",
          fontsize=7.8, color=MUTED, ha="left", va="baseline")
 
 out.parent.mkdir(exist_ok=True)
