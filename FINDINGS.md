@@ -238,6 +238,7 @@ Two runs of the same model, prompt and task agree on pass or fail for only 56–
 - **What it does.** `find_code` returns `(python_blocks + plain_blocks)[-1]`, so any plain ```` ``` ```` block beats every ```` ```python ```` block, regardless of order. Its comment says "Use the last code block found".
 - **Why it matters.** Prompt D asks the agent to identify the bad tests. An agent that quotes the failing assertion in a plain block has the quote executed as its solution. Strictly, quoting breaks the prompt's "SINGLE code block" format.
 - **What we know.** We didn't measure how often this changed an outcome. The patch takes the last block by position.
+- **A better fix exists upstream.** [PR #6](https://github.com/safety-research/impossiblebench/pull/6) (Oct 12, by another researcher) reports a related symptom: the plain-block pattern also matches the prose *between* two blocks, so multi-block replies were mis-extracted in 19% of their Qwen3-8B attempts. Our positional fix avoids that, but it still executes a trailing usage example; PR #6 instead returns the last block that defines a function, which handles both.
 
 ## 5. Who games, and how much the setup matters
 
